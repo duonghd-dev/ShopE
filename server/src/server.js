@@ -4,41 +4,23 @@ const port = 3000;
 
 const bodyParser = require('body-parser');
 
-const bcrypt = require('bcrypt');
-
 const connectDB = require('./config/connectDB');
 
-const userModel = require('./models/user.model');
+const router = require('./routers/index.router');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 connectDB();
 
-// req: require (dữ liệu client gửi lên)
-// res: response (trả kết quả về cho client)
-app.post('/api/register', async (req, res) => {
-  const { fullName, email, password } = req.body;
+router(app);
 
-  const findUser = await userModel.findOne({ email });
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
 
-  if (findUser) {
-    return res.status(400).json({
-      message: 'Email already exists',
-    });
-  }
-
-  const saltRounds = 10;
-  const hashedPassword = await bcrypt.hash(password, saltRounds);
-  const newUser = await userModel.create({
-    fullName,
-    email,
-    password: hashedPassword,
-  });
-
-  return res.status(201).json({
-    message: 'Register successfully',
-    metadata: newUser,
+  return res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Error server!',
   });
 });
 
